@@ -64,7 +64,7 @@ def get_weather(query: str) -> str:
     return "It's 90 degrees and sunny."
 
 
-def get_current_time(query: str) -> str:
+def get_current_time(city: str) -> str:
     """Simulates getting the current time for a city.
 
     Args:
@@ -73,14 +73,43 @@ def get_current_time(query: str) -> str:
     Returns:
         A string with the current time information.
     """
-    if "sf" in query.lower() or "san francisco" in query.lower():
-        tz_identifier = "America/Los_Angeles"
-    else:
-        return f"Sorry, I don't have timezone information for query: {query}."
+    city_lower = city.lower().strip()
+    
+    # Map common cities to timezones
+    tz_map = {
+        "san francisco": "America/Los_Angeles",
+        "sf": "America/Los_Angeles",
+        "tokyo": "Asia/Tokyo",
+        "delhi": "Asia/Kolkata",
+        "new delhi": "Asia/Kolkata",
+        "london": "Europe/London",
+        "paris": "Europe/Paris",
+        "new york": "America/New_York",
+        "ny": "America/New_York",
+        "sydney": "Australia/Sydney",
+    }
+    
+    # Try to find a match in the keys
+    tz_identifier = None
+    for name, tz_name in tz_map.items():
+        if name in city_lower:
+            tz_identifier = tz_name
+            break
+            
+    if not tz_identifier:
+        # Fallback to check if the input itself is a valid timezone identifier
+        try:
+            ZoneInfo(city)
+            tz_identifier = city
+        except Exception:
+            return f"Sorry, I don't have timezone information for: {city}. Supported cities include San Francisco, Tokyo, Delhi, London, Paris, New York, Sydney."
 
-    tz = ZoneInfo(tz_identifier)
-    now = datetime.datetime.now(tz)
-    return f"The current time for query {query} is {now.strftime('%Y-%m-%d %H:%M:%S %Z%z')}"
+    try:
+        tz = ZoneInfo(tz_identifier)
+        now = datetime.datetime.now(tz)
+        return f"The current time in {city} is {now.strftime('%Y-%m-%d %H:%M:%S %Z%z')}"
+    except Exception as e:
+        return f"Error getting time for timezone {tz_identifier}: {str(e)}"
 
 
 weather_agent = LlmAgent(
